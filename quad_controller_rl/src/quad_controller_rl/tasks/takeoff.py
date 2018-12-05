@@ -5,6 +5,7 @@ from gym import spaces
 from geometry_msgs.msg import Vector3, Point, Quaternion, Pose, Twist, Wrench
 from quad_controller_rl.tasks.base_task import BaseTask
 
+
 class Takeoff(BaseTask):
     """Simple task where the goal is to lift off the ground and reach a target height."""
 
@@ -14,7 +15,7 @@ class Takeoff(BaseTask):
         self.observation_space = spaces.Box(
             np.array([- cube_size / 2, - cube_size / 2,       0.0, -1.0, -1.0, -1.0, -1.0]),
             np.array([  cube_size / 2,   cube_size / 2, cube_size,  1.0,  1.0,  1.0,  1.0]))
-        #print("Takeoff(): observation_space = {}".format(self.observation_space))  # [debug]
+        # print("Takeoff(): observation_space = {}".format(self.observation_space))  # [debug]
 
         # Action space: <force_x, .._y, .._z, torque_x, .._y, .._z>
         max_force = 25.0
@@ -22,7 +23,7 @@ class Takeoff(BaseTask):
         self.action_space = spaces.Box(
             np.array([-max_force, -max_force, -max_force, -max_torque, -max_torque, -max_torque]),
             np.array([ max_force,  max_force,  max_force,  max_torque,  max_torque,  max_torque]))
-        #print("Takeoff(): action_space = {}".format(self.action_space))  # [debug]
+        print("Takeoff(): action_space = {}".format(self.action_space))  # [debug]
 
         # Task-specific parameters
         self.max_duration = 5.0  # secs
@@ -46,13 +47,17 @@ class Takeoff(BaseTask):
 
         # Compute reward / penalty and check if this episode is complete
         done = False
-        reward = -min(abs(self.target_z - pose.position.z), 20.0)  # reward = zero for matching target z, -ve as you go farther, upto -20
+        # reward = zero for matching target z, -ve as you go farther, upto -20
+        reward = -min(abs(self.target_z - pose.position.z), 20.0)
         if pose.position.z >= self.target_z:  # agent has crossed the target height
             reward += 10.0  # bonus reward
             done = True
         elif timestamp > self.max_duration:  # agent has run out of time
             reward -= 10.0  # extra penalty
             done = True
+        else:
+            reward -= 1
+            done = False
 
         # Take one RL step, passing in current state and reward, and obtain action
         # Note: The reward passed in here is the result of past action(s)
